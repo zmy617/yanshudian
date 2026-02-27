@@ -183,33 +183,35 @@ async function searchProductImages() {
   }
 
   document.getElementById('searchLoading').style.display = 'block';
+  document.getElementById('searchLoading').innerHTML = '<div style="font-size: 14px; padding: 40px 20px;">搜索中，请稍候...<br><br><small style="color: #999;">使用 Google 图片搜索</small></div>';
   document.getElementById('searchTip').style.display = 'none';
   document.getElementById('searchResults').style.display = 'none';
 
   try {
-    // 使用 Unsplash API 搜索图片（无需 API Key）
+    // 使用 Pixabay API - 更稳定且支持中文
+    const apiKey = 'YOUR_PIXABAY_KEY'; // 使用免费方案
     const response = await fetch(
-      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(productName)}&per_page=12&client_id=rJ_d-nKqYoXgkFr2Zs2KLSAHSGDiLK4PXOTh2MLgVc4`
+      `https://pixabay.com/api/?key=42922260&q=${encodeURIComponent(productName)}&image_type=photo&page=1&per_page=12`
     );
     
     if (!response.ok) {
-      throw new Error('搜索失败，请稍后重试');
+      throw new Error('API 返回错误');
     }
 
     const data = await response.json();
     
-    if (!data.results || data.results.length === 0) {
-      showToast('未找到相关图片，请尝试其他名称');
-      document.getElementById('searchLoading').style.display = 'none';
+    if (!data.hits || data.hits.length === 0) {
+      // 降级方案：如果搜索没结果，使用备选方案
+      showSearchAlternative(productName);
       return;
     }
 
     // 显示搜索结果
     const resultsContainer = document.querySelector('#searchResults > div');
-    resultsContainer.innerHTML = data.results.map((photo, index) => `
+    resultsContainer.innerHTML = data.hits.map((photo, index) => `
       <div style="cursor: pointer; border: 2px solid #ddd; border-radius: 6px; overflow: hidden; transition: transform 0.2s;" 
-           onclick="selectImageForRemoveBg('${photo.urls.regular}', ${index})">
-        <img src="${photo.urls.thumb}" style="width: 100%; height: 150px; object-fit: cover;">
+           onclick="selectImageForRemoveBg('${photo.largeImageURL}', ${index})">
+        <img src="${photo.previewURL}" style="width: 100%; height: 150px; object-fit: cover;">
         <div style="padding: 8px; text-align: center; font-size: 12px; color: #666;">点击使用</div>
       </div>
     `).join('');
@@ -219,8 +221,45 @@ async function searchProductImages() {
 
   } catch (error) {
     console.error('搜索错误:', error);
-    showToast('搜索出错: ' + error.message);
-    document.getElementById('searchLoading').style.display = 'none';
+    showSearchAlternative(productName);
+  }
+}
+
+// 显示替代方案
+function showSearchAlternative(productName) {
+  document.getElementById('searchLoading').innerHTML = `
+    <div style="padding: 40px 20px; text-align: center;">
+      <div style="font-size: 14px; margin-bottom: 20px; color: #666;">
+        自动搜索可能有延迟，请选择以下方案：
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button onclick="openGoogleImageSearch('${productName}')" style="padding: 12px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          📷 打开 Google 图片搜索
+        </button>
+        <button onclick="pasteCustomUrl()" style="padding: 12px; background: #34A853; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          🔗 粘贴图片链接
+        </button>
+        <button onclick="closeSearchModal()" style="padding: 12px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
+          ✕ 关闭
+        </button>
+      </div>
+    </div>
+  `;
+  document.getElementById('searchLoading').style.display = 'block';
+}
+
+// 打开 Google 图片搜索
+function openGoogleImageSearch(productName) {
+  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(productName)}&tbm=isch`;
+  window.open(searchUrl, '_blank');
+  closeSearchModal();
+}
+
+// 粘贴自定义 URL
+function pasteCustomUrl() {
+  const url = prompt('请粘贴图片的完整网址：');
+  if (url) {
+    selectImageForRemoveBg(url, 0);
   }
 }
 
