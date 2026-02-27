@@ -194,13 +194,14 @@ function applyImageLink() {
     return;
   }
 
-  if (!imageUrl.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i)) {
-    showToast('请输入有效的图片 URL（以 .jpg/.png 等结尾）');
+  // 更宽松的URL验证（支持更多格式）
+  if (!imageUrl.match(/^https?:\/\/.+/i)) {
+    showToast('请输入完整的图片链接（以 http:// 或 https:// 开头）');
     return;
   }
 
   document.getElementById('productImage').value = imageUrl;
-  document.getElementById('imagePreview').innerHTML = `<img src="${imageUrl}" alt="预览" style="width:100%; height:100%; object-fit:contain;">`;
+  document.getElementById('imagePreview').innerHTML = `<img src="${imageUrl}" alt="预览" style="width:100%; height:100%; object-fit:contain;" onerror="this.parentElement.innerHTML='<span class=\\'image-preview-placeholder\\'>图片加载失败</span>'">`;
   
   closeSearchModal();
   showToast('✓ 图片已应用');
