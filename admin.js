@@ -269,6 +269,9 @@ function handleFormSubmit(e) {
   if (document.getElementById('tagHot').checked) tags.push('热销');
   if (document.getElementById('tagNew').checked) tags.push('新品');
 
+  // 收集商品介绍
+  const description = document.getElementById('productDescription').value.trim();
+
   // 创建商品对象
   const product = {
     id: currentEditId || Date.now(),
@@ -276,7 +279,8 @@ function handleFormSubmit(e) {
     price,
     category,
     tags,
-    image
+    image,
+    description: description || ''
   };
 
   if (currentEditId) {
@@ -303,6 +307,8 @@ function resetForm() {
   document.getElementById('imagePreview').innerHTML = '<span class="image-preview-placeholder">点击下方按钮添加图片</span>';
   document.getElementById('customCategory').style.display = 'none';
   document.getElementById('customCategory').value = '';
+  document.getElementById('productDescriptionArea').style.display = 'none';
+  document.getElementById('productDescription').value = '';
   updateSpecInputs();
   currentEditId = null;
 }
@@ -380,6 +386,12 @@ function editProduct(id) {
   
   // 预览图片
   document.getElementById('imagePreview').innerHTML = `<img src="${product.image}" alt="预览">`;
+
+  // 如果有商品介绍，显示介绍区域
+  if (product.description) {
+    document.getElementById('productDescriptionArea').style.display = 'block';
+    document.getElementById('productDescription').value = product.description;
+  }
 
   // 规格
   setTimeout(() => {
@@ -478,4 +490,152 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 1500);
+}
+// ========== AI 智能助手相关函数 ==========
+let aiGeneratedData = {};
+
+// 打开 AI 助手
+function openAIAssistant() {
+  const productName = document.getElementById('productName').value.trim();
+  if (!productName) {
+    showToast('请先输入商品名称');
+    return;
+  }
+  
+  document.getElementById('aiAssistantModal').style.display = 'block';
+  document.getElementById('aiProductName').textContent = productName;
+  
+  // 加载保存的 API Key
+  const savedKey = localStorage.getItem('claudeApiKey');
+  if (savedKey) {
+    document.getElementById('claudeApiKey').value = savedKey;
+  }
+}
+
+// 关闭 AI 助手
+function closeAIAssistant() {
+  document.getElementById('aiAssistantModal').style.display = 'none';
+  document.getElementById('aiLoading').style.display = 'none';
+  document.getElementById('aiResults').style.display = 'none';
+}
+
+// 生成商品信息
+async function generateProductInfo() {
+  const productName = document.getElementById('productName').value.trim();
+  const apiKey = document.getElementById('claudeApiKey').value.trim();
+  
+  if (!apiKey) {
+    showToast('❌ 请输入 Claude API Key');
+    return;
+  }
+  
+  document.getElementById('aiLoading').style.display = 'block';
+  document.getElementById('aiResults').style.display = 'none';
+  
+  // 保存 API Key（如果勾选了）
+  if (document.getElementById('saveApiKey').checked) {
+    localStorage.setItem('claudeApiKey', apiKey);
+  }
+  
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: `你是一个专业的电商商品编辑。请为商品"${productName}"生成以下内容，用JSON格式返回：
+{
+  "description": "两句简短的商品介绍（突出特点和用途）",
+  "specs": ["规格1", "规格2", "规格3"],
+  "prices": [价格1, 价格2, 价格3],
+  "searchTips": "用于Google搜索的关键词建议"
+}
+
+请确保返回有效的JSON，价格为数字类型。`
+        }]
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API 错误: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const content = data.content[0].text;
+    
+    // 尝试解析 JSON
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('无法从 AI 响应中提取 JSON');
+    }
+    
+    const result = JSON.parse(jsonMatch[0]);
+    
+    // 保存生成的数据
+    aiGeneratedData = {
+      description: result.description || '',
+      specs: result.specs || [],
+      prices: result.prices || [],
+      searchTips: result.searchTips || productName
+    };
+    
+    // 显示结果
+    const resultHTML = `
+      <strong>📝 商品介绍：</strong><br>${aiGeneratedData.description}<br><br>
+      <strong>📐 推荐规格：</strong><br>${aiGeneratedData.specs.join('、')}<br><br>
+      <strong>💰 参考价格：</strong><br>¥${aiGeneratedData.prices.join('、¥')}<br><br>
+      <strong>🔍 搜索关键词：</strong><br>${aiGeneratedData.searchTips}
+    `;
+    
+    document.getElementById('aiResultContent').innerHTML = resultHTML;
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiResults').style.display = 'block';
+    
+  } catch (error) {
+    console.error('AI 生成错误:', error);
+    showToast('❌ ' + error.message);
+    document.getElementById('aiLoading').style.display = 'none';
+  }
+}
+
+// 应用 AI 生成的结果
+function applyAIResults() {
+  if (!aiGeneratedData.description) {
+    showToast('请先生成内容');
+    return;
+  }
+  
+  // 填充商品介绍
+  if (aiGeneratedData.description) {
+    document.getElementById('productDescriptionArea').style.display = 'block';
+    document.getElementById('productDescription').value = aiGeneratedData.description;
+  }
+  
+  // 填充规格和价格
+  if (aiGeneratedData.specs && aiGeneratedData.specs.length > 0) {
+    const container = document.getElementById('specInputs');
+    container.innerHTML = aiGeneratedData.specs.map((spec, index) => {
+      const price = aiGeneratedData.prices[index] || 0;
+      return `
+        <div class="spec-input-group">
+          <input type="text" class="form-input spec-name" value="${spec}" placeholder="规格">
+          <input type="number" class="form-input spec-price" value="${price}" placeholder="价格">
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // 提示使用搜索关键词
+  if (aiGeneratedData.searchTips) {
+    showToast(`💡 搜索建议：${aiGeneratedData.searchTips}`);
+  }
+  
+  closeAIAssistant();
 }
