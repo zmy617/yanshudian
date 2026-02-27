@@ -169,12 +169,10 @@ function openSearchModal() {
 // 关闭模态框
 function closeSearchModal() {
   document.getElementById('searchModal').style.display = 'none';
-  document.getElementById('searchResults').style.display = 'none';
-  document.getElementById('searchTip').style.display = 'block';
 }
 
-// 搜索商品图片
-async function searchProductImages() {
+// 打开 Google 图片搜索
+function openGoogleSearch() {
   const productName = document.getElementById('searchProductName').value.trim();
   
   if (!productName) {
@@ -182,164 +180,30 @@ async function searchProductImages() {
     return;
   }
 
-  document.getElementById('searchLoading').style.display = 'block';
-  document.getElementById('searchLoading').innerHTML = '<div style="font-size: 14px; padding: 40px 20px;">搜索中，请稍候...<br><br><small style="color: #999;">使用 Google 图片搜索</small></div>';
-  document.getElementById('searchTip').style.display = 'none';
-  document.getElementById('searchResults').style.display = 'none';
-
-  try {
-    // 使用 Pixabay API - 更稳定且支持中文
-    const apiKey = 'YOUR_PIXABAY_KEY'; // 使用免费方案
-    const response = await fetch(
-      `https://pixabay.com/api/?key=42922260&q=${encodeURIComponent(productName)}&image_type=photo&page=1&per_page=12`
-    );
-    
-    if (!response.ok) {
-      throw new Error('API 返回错误');
-    }
-
-    const data = await response.json();
-    
-    if (!data.hits || data.hits.length === 0) {
-      // 降级方案：如果搜索没结果，使用备选方案
-      showSearchAlternative(productName);
-      return;
-    }
-
-    // 显示搜索结果
-    const resultsContainer = document.querySelector('#searchResults > div');
-    resultsContainer.innerHTML = data.hits.map((photo, index) => `
-      <div style="cursor: pointer; border: 2px solid #ddd; border-radius: 6px; overflow: hidden; transition: transform 0.2s;" 
-           onclick="selectImageForRemoveBg('${photo.largeImageURL}', ${index})">
-        <img src="${photo.previewURL}" style="width: 100%; height: 150px; object-fit: cover;">
-        <div style="padding: 8px; text-align: center; font-size: 12px; color: #666;">点击使用</div>
-      </div>
-    `).join('');
-
-    document.getElementById('searchLoading').style.display = 'none';
-    document.getElementById('searchResults').style.display = 'block';
-
-  } catch (error) {
-    console.error('搜索错误:', error);
-    showSearchAlternative(productName);
-  }
-}
-
-// 显示替代方案
-function showSearchAlternative(productName) {
-  document.getElementById('searchLoading').innerHTML = `
-    <div style="padding: 40px 20px; text-align: center;">
-      <div style="font-size: 14px; margin-bottom: 20px; color: #666;">
-        自动搜索可能有延迟，请选择以下方案：
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button onclick="openGoogleImageSearch('${productName}')" style="padding: 12px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          📷 打开 Google 图片搜索
-        </button>
-        <button onclick="pasteCustomUrl()" style="padding: 12px; background: #34A853; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          🔗 粘贴图片链接
-        </button>
-        <button onclick="closeSearchModal()" style="padding: 12px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          ✕ 关闭
-        </button>
-      </div>
-    </div>
-  `;
-  document.getElementById('searchLoading').style.display = 'block';
-}
-
-// 打开 Google 图片搜索
-function openGoogleImageSearch(productName) {
   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(productName)}&tbm=isch`;
   window.open(searchUrl, '_blank');
-  closeSearchModal();
+  showToast('✓ 已打开 Google 图片搜索');
 }
 
-// 粘贴自定义 URL
-function pasteCustomUrl() {
-  const url = prompt('请粘贴图片的完整网址：');
-  if (url) {
-    selectImageForRemoveBg(url, 0);
-  }
-}
-
-// 选择图片并移除背景
-async function selectImageForRemoveBg(imageUrl, index) {
-  const apiKey = document.getElementById('removeBgApiKey').value.trim();
+// 应用图片链接
+function applyImageLink() {
+  const imageUrl = document.getElementById('imageUrlInput').value.trim();
   
-  if (!apiKey) {
-    showToast('⚠️ 需要 remove.bg API Key，请先设置');
+  if (!imageUrl) {
+    showToast('请粘贴图片链接');
     return;
   }
 
-  document.getElementById('searchLoading').style.display = 'block';
-  document.getElementById('searchResults').style.display = 'none';
-
-  try {
-    // 调用 remove.bg API 移除背景
-    const form = new FormData();
-    form.append('image_url', imageUrl);
-    form.append('type', 'auto');
-    form.append('format', 'autodetect');
-
-    const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': apiKey
-      },
-      body: form
-    });
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('API Key 无效或已过期');
-      } else if (response.status === 402) {
-        throw new Error('API 配额已用尽，请升级账户');
-      }
-      throw new Error('背景移除失败');
-    }
-
-    const blob = await response.blob();
-    
-    // 创建 Canvas 添加白色背景
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(img.width, 400);
-      canvas.height = Math.max(img.height, 400);
-      
-      const ctx = canvas.getContext('2d');
-      
-      // 绘制白色背景
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // 居中绘制图片
-      const x = (canvas.width - img.width) / 2;
-      const y = (canvas.height - img.height) / 2;
-      ctx.drawImage(img, x, y);
-      
-      // 转换为 data URL
-      const resultImage = canvas.toDataURL('image/png');
-      
-      // 设置图片
-      document.getElementById('productImage').value = resultImage;
-      document.getElementById('imagePreview').innerHTML = `<img src="${resultImage}" alt="预览" style="width:100%; height:100%; object-fit:contain;">`;
-      
-      closeSearchModal();
-      showToast('✅ 图片处理完成');
-      document.getElementById('searchLoading').style.display = 'none';
-    };
-    
-    img.src = URL.createObjectURL(blob);
-
-  } catch (error) {
-    console.error('背景移除错误:', error);
-    showToast('❌ ' + error.message);
-    document.getElementById('searchLoading').style.display = 'none';
-    document.getElementById('searchResults').style.display = 'block';
+  if (!imageUrl.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i)) {
+    showToast('请输入有效的图片 URL（以 .jpg/.png 等结尾）');
+    return;
   }
-}
+
+  document.getElementById('productImage').value = imageUrl;
+  document.getElementById('imagePreview').innerHTML = `<img src="${imageUrl}" alt="预览" style="width:100%; height:100%; object-fit:contain;">`;
+  
+  closeSearchModal();
+  showToast('✓ 图片已应用');
 
 // 处理表单提交
 function handleFormSubmit(e) {
