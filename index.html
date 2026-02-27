@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>花冠专卖店永盛烟酒</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.css">
+</head>
+<body>
+  <!-- 顶部搜索 -->
+  <div class="search-header">
+    <div class="search-box">
+      <i data-lucide="search" class="search-icon"></i>
+      <input type="text" id="searchInput" placeholder="搜索商品...">
+    </div>
+  </div>
+
+  <!-- 分类标签 -->
+  <div class="category-tabs">
+    <button class="category-tab active" data-category="all">全部</button>
+    <button class="category-tab" data-category="香烟">香烟</button>
+    <button class="category-tab" data-category="白酒">白酒</button>
+    <button class="category-tab" data-category="礼盒">礼盒</button>
+  </div>
+
+  <!-- 快捷筛选 -->
+  <div class="quick-filters">
+    <div class="quick-filter" data-filter="hot">
+      <span class="quick-filter-dot"></span>
+      热销
+    </div>
+    <div class="quick-filter" data-filter="new">
+      <span class="quick-filter-dot"></span>
+      新品
+    </div>
+  </div>
+
+  <!-- 商品列表 -->
+  <div class="product-list" id="productList">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+
+  <!-- 底部工具栏 -->
+  <div class="bottom-tools">
+    <button class="tool-btn" id="shareBtn">
+      <i data-lucide="share-2"></i>
+      分享
+    </button>
+    <button class="tool-btn" id="contactBtn">
+      <i data-lucide="message-circle"></i>
+      联系
+    </button>
+    <button class="tool-btn" id="mapBtn">
+      <i data-lucide="map-pin"></i>
+      地图
+    </button>
+    <button class="tool-btn" id="qrBtn">
+      <i data-lucide="qr-code"></i>
+      二维码
+    </button>
+    <button class="tool-btn" id="collectBtn">
+      <i data-lucide="heart"></i>
+      收藏
+    </button>
+  </div>
+
+  <!-- 底部购物车栏 -->
+  <div class="cart-bar">
+    <div class="cart-info">
+      <div class="cart-icon-wrap" id="cartIcon">
+        <i data-lucide="shopping-cart" class="cart-icon"></i>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </div>
+      <div>
+        <span class="cart-total" id="cartTotal">¥0</span>
+        <span class="cart-count" id="cartCount">(0件)</span>
+      </div>
+    </div>
+    <button class="checkout-btn" id="checkoutBtn">去结算</button>
+  </div>
+
+  <!-- 购物车弹窗 -->
+  <div class="cart-overlay" id="cartOverlay">
+    <div class="cart-panel" id="cartPanel">
+      <div class="cart-header">
+        <span class="cart-title">购物车</span>
+        <button class="cart-close" id="cartClose">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="cart-items" id="cartItems">
+        <!-- 购物车商品 -->
+      </div>
+      <div class="cart-footer">
+        <div class="cart-summary">
+          <span class="cart-total-label">总计</span>
+          <span class="cart-total-price" id="cartPanelTotal">¥0</span>
+        </div>
+        <div class="cart-actions">
+          <button class="clear-cart-btn" id="clearCartBtn">清空</button>
+          <button class="contact-btn" id="contactShopBtn">联系店家</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 二维码弹窗 -->
+  <div class="qr-overlay" id="qrOverlay">
+    <div class="qr-panel">
+      <h3>店铺二维码</h3>
+      <div id="qrcode"></div>
+      <p>长按二维码保存发给顾客</p>
+      <button class="qr-close" id="qrClose">关闭</button>
+    </div>
+  </div>
+
+  <!-- 微信分享提示 -->
+  <div class="share-tip" id="shareTip">
+    点击右上角 ··· 分享给朋友
+  </div>
+
+  <!-- Toast提示 -->
+  <div class="toast" id="toast"></div>
+
+  <!-- 图标库 -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <!-- 二维码生成 -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- 商品数据 -->
+  <script src="products.js"></script>
+  <!-- 业务逻辑 -->
+  <script src="app.js"></script>
+</body>
+</html>

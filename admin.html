@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>商品管理 - 花冠专卖店永盛烟酒</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.css">
+  <style>
+    /* 管理后台专用样式 */
+    .admin-header {
+      background: var(--primary);
+      color: #fff;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .admin-header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .admin-header .shop-name {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .admin-tabs {
+      display: flex;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .admin-tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      border: none;
+      background: none;
+      font-size: 14px;
+      color: var(--secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .admin-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .admin-content {
+      padding: 16px;
+    }
+
+    .admin-section {
+      display: none;
+    }
+
+    .admin-section.active {
+      display: block;
+    }
+
+    /* 商品列表 */
+    .product-admin-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .product-admin-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .product-admin-image {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .product-admin-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .product-admin-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-admin-category {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      background: var(--bg);
+      border-radius: 10px;
+      color: var(--secondary);
+      margin-bottom: 8px;
+    }
+
+    .product-admin-tags {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .product-admin-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      color: #fff;
+    }
+
+    .product-admin-tag.hot {
+      background: var(--danger);
+    }
+
+    .product-admin-tag.new {
+      background: var(--success);
+    }
+
+    .product-admin-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .product-admin-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .product-admin-btn {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .product-admin-btn.edit {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .product-admin-btn.delete {
+      background: var(--bg);
+      color: var(--danger);
+    }
+
+    /* 添加商品表单 */
+    .add-form {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--bg);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--bg);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: #fff;
+      outline: none;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .spec-input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .spec-input-group input {
+      flex: 1;
+    }
+
+    .spec-input-group .remove-spec {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      color: var(--danger);
+      cursor: pointer;
+    }
+
+    .add-spec-btn {
+      width: 100%;
+      padding: 10px;
+      border: 1px dashed var(--accent);
+      border-radius: var(--radius-sm);
+      background: none;
+      color: var(--accent);
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+
+    .tag-checkboxes {
+      display: flex;
+      gap: 12px;
+    }
+
+    .tag-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .tag-checkbox input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .form-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .form-submit:active {
+      background: var(--accent-dark);
+    }
+
+    /* 店铺设置 */
+    .shop-settings {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-size: 14px;
+    }
+
+    .setting-input {
+      text-align: right;
+      border: none;
+      background: var(--bg);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      width: 180px;
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--secondary);
+    }
+
+    .empty-state svg {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* 操作提示 */
+    .admin-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      z-index: 500;
+      display: none;
+    }
+
+    .admin-toast.show {
+      display: block;
+      animation: toastShow 1.5s;
+    }
+
+    /* 图片预览 */
+    .image-preview {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-preview-placeholder {
+      color: var(--secondary);
+      font-size: 13px;
+    }
+
+    /* 删除确认 */
+    .delete-confirm-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 400;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delete-confirm-overlay.show {
+      display: flex;
+    }
+
+    .delete-confirm-box {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: var(--radius);
+      text-align: center;
+      max-width: 280px;
+    }
+
+    .delete-confirm-box h3 {
+      margin-bottom: 12px;
+    }
+
+    .delete-confirm-box p {
+      color: var(--secondary);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .delete-confirm-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .delete-confirm-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .cancel-btn {
+      background: var(--bg);
+      border: none;
+      color: var(--secondary);
+    }
+
+    .confirm-delete-btn {
+      background: var(--danger);
+      border: none;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- 管理后台头部 -->
+  <div class="admin-header">
+    <div>
+      <h1>商品管理</h1>
+      <span class="shop-name">花冠专卖店永盛烟酒</span>
+    </div>
+    <a href="index.html" style="color:#fff;text-decoration:none;font-size:13px;">
+      <i data-lucide="eye" style="width:18px;height:18px;"></i> 查看店铺
+    </a>
+  </div>
+
+  <!-- 管理标签 -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="products">商品列表</button>
+    <button class="admin-tab" data-tab="add">添加商品</button>
+    <button class="admin-tab" data-tab="settings">店铺设置</button>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="admin-content">
+    <!-- 商品列表 -->
+    <div class="admin-section active" id="productsSection">
+      <div class="product-admin-list" id="productAdminList">
+        <!-- 商品列表 -->
+      </div>
+    </div>
+
+    <!-- 添加商品 -->
+    <div class="admin-section" id="addSection">
+      <form class="add-form" id="addProductForm">
+        <div class="form-group">
+          <label class="form-label">商品图片</label>
+          <div class="image-preview" id="imagePreview">
+            <span class="image-preview-placeholder">点击下方按钮添加图片</span>
+          </div>
+          <input type="text" class="form-input" id="productImage" placeholder="粘贴图片链接，或留空使用默认图" style="margin-bottom:8px;">
+          <button type="button" class="add-spec-btn" onclick="useDefaultImage()">使用默认占位图</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">商品名称 *</label>
+          <input type="text" class="form-input" id="productName" placeholder="如：中华（软盒）" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">分类 *</label>
+            <select class="form-select" id="productCategory" required>
+              <option value="香烟">香烟</option>
+              <option value="白酒">白酒</option>
+              <option value="礼盒">礼盒</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">规格与价格</label>
+          <div id="specInputs">
+            <!-- 动态生成 -->
+          </div>
+          <button type="button" class="add-spec-btn" id="addSpecBtn">+ 添加规格</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">商品标签</label>
+          <div class="tag-checkboxes">
+            <label class="tag-checkbox">
+              <input type="checkbox" id="tagHot"> 热销
+            </label>
+            <label class="tag-checkbox">
+              <input type="checkbox" id="tagNew"> 新品
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="form-submit">保存商品</button>
+      </form>
+    </div>
+
+    <!-- 店铺设置 -->
+    <div class="admin-section" id="settingsSection">
+      <div class="shop-settings">
+        <div class="setting-item">
+          <span class="setting-label">店铺名称</span>
+          <input type="text" class="setting-input" id="shopName" placeholder="花冠专卖店永盛烟酒">
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">联系电话</span>
+          <input type="tel" class="setting-input" id="shopPhone" placeholder="138-0000-0000">
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">店铺地址</span>
+          <input type="text" class="setting-input" id="shopAddress" placeholder="请输入地址">
+        </div>
+        <button class="form-submit" onclick="saveShopSettings()" style="margin-top:16px;">保存设置</button>
+      </div>
+
+      <div class="shop-settings" style="margin-top:16px;">
+        <h3 style="margin-bottom:12px;font-size:15px;">数据管理</h3>
+        <button class="product-admin-btn delete" onclick="resetProducts()" style="width:100%;">
+          <i data-lucide="refresh-cw"></i> 重置为默认商品
+        </button>
+        <button class="product-admin-btn delete" onclick="exportData()" style="width:100%;margin-top:8px;background:#fff;border:1px solid var(--accent);color:var(--accent);">
+          <i data-lucide="download"></i> 导出商品数据
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认弹窗 -->
+  <div class="delete-confirm-overlay" id="deleteConfirm">
+    <div class="delete-confirm-box">
+      <h3>确认删除</h3>
+      <p>确定要删除这个商品吗？此操作无法撤销。</p>
+      <div class="delete-confirm-actions">
+        <button class="cancel-btn" onclick="closeDeleteConfirm()">取消</button>
+        <button class="confirm-delete-btn" id="confirmDeleteBtn">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="admin-toast" id="adminToast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="products.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
