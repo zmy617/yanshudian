@@ -157,6 +157,65 @@ function useDefaultImage() {
   document.getElementById('imagePreview').innerHTML = `<img src="${url}" alt="预览">`;
 }
 
+// 生成白底图片
+function generateProductImage() {
+  const productName = document.getElementById('productName').value.trim();
+  
+  if (!productName) {
+    showToast('请先输入商品名称');
+    return;
+  }
+
+  // 创建 Canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 400;
+  const ctx = canvas.getContext('2d');
+
+  // 绘制白色背景
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 绘制边框
+  ctx.strokeStyle = '#E0E0E0';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+  // 绘制文字
+  ctx.fillStyle = '#333333';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // 自动调整字体大小
+  let fontSize = 60;
+  ctx.font = `bold ${fontSize}px "Microsoft YaHei", "SimHei", Arial, sans-serif`;
+  
+  // 测量文字宽度，如果太宽则缩小字体
+  let textMetrics = ctx.measureText(productName);
+  while (textMetrics.width > canvas.width - 40 && fontSize > 20) {
+    fontSize -= 5;
+    ctx.font = `bold ${fontSize}px "Microsoft YaHei", "SimHei", Arial, sans-serif`;
+    textMetrics = ctx.measureText(productName);
+  }
+
+  // 绘制主文字
+  ctx.fillText(productName, canvas.width / 2, canvas.height / 2 - 20);
+
+  // 绘制副文本（商场名）
+  ctx.fillStyle = '#999999';
+  ctx.font = `14px "Microsoft YaHei", "SimHei", Arial, sans-serif`;
+  ctx.fillText('花冠专卖店永盛烟酒', canvas.width / 2, canvas.height / 2 + 60);
+
+  // 转换为 data URL
+  const imageData = canvas.toDataURL('image/jpeg', 0.95);
+  
+  // 设置图片
+  document.getElementById('productImage').value = imageData;
+  document.getElementById('imagePreview').innerHTML = `<img src="${imageData}" alt="预览" style="width:100%; height:100%; object-fit:contain;">`;
+  
+  showToast('白底图已生成 ✓');
+}
+
 // 处理表单提交
 function handleFormSubmit(e) {
   e.preventDefault();

@@ -479,7 +479,10 @@
             <span class="image-preview-placeholder">点击下方按钮添加图片</span>
           </div>
           <input type="text" class="form-input" id="productImage" placeholder="粘贴图片链接，或留空使用默认图" style="margin-bottom:8px;">
-          <button type="button" class="add-spec-btn" onclick="useDefaultImage()">使用默认占位图</button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="add-spec-btn" onclick="useDefaultImage()" style="margin-bottom: 0; flex: 1;">使用默认占位图</button>
+            <button type="button" class="add-spec-btn" onclick="generateProductImage()" style="margin-bottom: 0; flex: 1;">生成白底图</button>
+          </div>
         </div>
 
         <div class="form-group">
