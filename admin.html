@@ -493,11 +493,16 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">分类 *</label>
-            <select class="form-select" id="productCategory" required>
-              <option value="香烟">香烟</option>
-              <option value="白酒">白酒</option>
-              <option value="礼盒">礼盒</option>
-            </select>
+            <div style="display: flex; gap: 8px;">
+              <select class="form-select" id="productCategory" style="flex: 1; border: 1px solid var(--bg); border-radius: var(--radius-sm); padding: 12px;">
+                <option value="">-- 选择分类或自定义 --</option>
+                <option value="香烟">香烟</option>
+                <option value="白酒">白酒</option>
+                <option value="礼盒">礼盒</option>
+                <option value="custom">📝 自定义分类</option>
+              </select>
+            </div>
+            <input type="text" class="form-input" id="customCategory" placeholder="输入自定义分类名称（如：烟雾、酒水、促销等）" style="display: none; margin-top: 8px;">
           </div>
         </div>
 

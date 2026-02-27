@@ -89,6 +89,24 @@ function initForm() {
   // 添加规格按钮
   document.getElementById('addSpecBtn').addEventListener('click', addSpecInput);
 
+  // 分类自定义切换
+  document.getElementById('productCategory').addEventListener('change', () => {
+    const category = document.getElementById('productCategory').value;
+    const customInput = document.getElementById('customCategory');
+    
+    if (category === 'custom') {
+      customInput.style.display = 'block';
+      customInput.required = true;
+      customInput.focus();
+    } else {
+      customInput.style.display = 'none';
+      customInput.required = false;
+      customInput.value = '';
+    }
+    
+    updateSpecInputs();
+  });
+
   // 图片链接预览
   document.getElementById('productImage').addEventListener('input', (e) => {
     const url = e.target.value;
@@ -114,8 +132,10 @@ function updateSpecInputs() {
     specs = ['1盒', '1条'];
   } else if (category === '白酒') {
     specs = ['1瓶', '1提', '1箱'];
+  } else if (category === 'custom') {
+    specs = ['1件'];
   } else {
-    specs = ['1盒'];
+    specs = ['1件'];
   }
 
   container.innerHTML = specs.map(spec => `
@@ -212,7 +232,20 @@ function handleFormSubmit(e) {
   e.preventDefault();
 
   const name = document.getElementById('productName').value.trim();
-  const category = document.getElementById('productCategory').value;
+  let category = document.getElementById('productCategory').value;
+  
+  // 处理自定义分类
+  if (category === 'custom') {
+    category = document.getElementById('customCategory').value.trim();
+    if (!category) {
+      showToast('请输入自定义分类名称');
+      return;
+    }
+  } else if (!category) {
+    showToast('请选择分类');
+    return;
+  }
+  
   const imageInput = document.getElementById('productImage').value;
   const image = imageInput || `https://via.placeholder.com/200x200/F5F5F5/666666?text=${encodeURIComponent(name)}`;
 
@@ -268,6 +301,8 @@ function handleFormSubmit(e) {
 function resetForm() {
   document.getElementById('addProductForm').reset();
   document.getElementById('imagePreview').innerHTML = '<span class="image-preview-placeholder">点击下方按钮添加图片</span>';
+  document.getElementById('customCategory').style.display = 'none';
+  document.getElementById('customCategory').value = '';
   updateSpecInputs();
   currentEditId = null;
 }
@@ -325,7 +360,22 @@ function editProduct(id) {
   currentEditId = id;
   
   document.getElementById('productName').value = product.name;
-  document.getElementById('productCategory').value = product.category;
+  
+  // 处理分类：检查是否为预定义分类
+  const predefinedCategories = ['香烟', '白酒', '礼盒'];
+  let categorySelect = document.getElementById('productCategory');
+  
+  if (predefinedCategories.includes(product.category)) {
+    categorySelect.value = product.category;
+    document.getElementById('customCategory').style.display = 'none';
+    document.getElementById('customCategory').value = '';
+  } else {
+    // 如果是自定义分类
+    categorySelect.value = 'custom';
+    document.getElementById('customCategory').style.display = 'block';
+    document.getElementById('customCategory').value = product.category;
+  }
+  
   document.getElementById('productImage').value = product.image;
   
   // 预览图片
