@@ -204,6 +204,7 @@ function applyImageLink() {
   
   closeSearchModal();
   showToast('✓ 图片已应用');
+}
 
 // 处理表单提交
 function handleFormSubmit(e) {
