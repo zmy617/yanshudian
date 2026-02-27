@@ -505,11 +505,34 @@ function openAIAssistant() {
   document.getElementById('aiAssistantModal').style.display = 'block';
   document.getElementById('aiProductName').textContent = productName;
   
+  // 设置 AI 服务切换监听
+  document.querySelectorAll('input[name="aiService"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const service = radio.value;
+      document.getElementById('doubanConfig').style.display = service === 'douban' ? 'block' : 'none';
+      document.getElementById('claudeConfig').style.display = service === 'claude' ? 'block' : 'none';
+      document.getElementById('doubanApiKey').style.display = service === 'douban' ? 'block' : 'none';
+      document.getElementById('claudeApiKey').style.display = service === 'claude' ? 'block' : 'none';
+    });
+  });
+  
   // 加载保存的 API Key
-  const savedKey = localStorage.getItem('claudeApiKey');
-  if (savedKey) {
-    document.getElementById('claudeApiKey').value = savedKey;
+  const savedDoubanKey = localStorage.getItem('doubanApiKey');
+  const savedClaudeKey = localStorage.getItem('claudeApiKey');
+  
+  if (savedDoubanKey) {
+    document.getElementById('doubanApiKey').value = savedDoubanKey;
   }
+  if (savedClaudeKey) {
+    document.getElementById('claudeApiKey').value = savedClaudeKey;
+  }
+  
+  // 初始化显示状态
+  const service = document.querySelector('input[name="aiService"]:checked').value;
+  document.getElementById('doubanConfig').style.display = service === 'douban' ? 'block' : 'none';
+  document.getElementById('claudeConfig').style.display = service === 'claude' ? 'block' : 'none';
+  document.getElementById('doubanApiKey').style.display = service === 'douban' ? 'block' : 'none';
+  document.getElementById('claudeApiKey').style.display = service === 'claude' ? 'block' : 'none';
 }
 
 // 关闭 AI 助手
@@ -522,11 +545,32 @@ function closeAIAssistant() {
 // 生成商品信息
 async function generateProductInfo() {
   const productName = document.getElementById('productName').value.trim();
-  const apiKey = document.getElementById('claudeApiKey').value.trim();
+  const aiService = document.querySelector('input[name="aiService"]:checked').value;
   
-  if (!apiKey) {
-    showToast('❌ 请输入 Claude API Key');
-    return;
+  // 添加 AI 服务选择的显示/隐藏逻辑
+  document.querySelectorAll('input[name="aiService"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const service = radio.value;
+      document.getElementById('doubanConfig').style.display = service === 'douban' ? 'block' : 'none';
+      document.getElementById('claudeConfig').style.display = service === 'claude' ? 'block' : 'none';
+      document.getElementById('doubanApiKey').style.display = service === 'douban' ? 'block' : 'none';
+      document.getElementById('claudeApiKey').style.display = service === 'claude' ? 'block' : 'none';
+    });
+  });
+  
+  let apiKey;
+  if (aiService === 'douban') {
+    apiKey = document.getElementById('doubanApiKey').value.trim();
+    if (!apiKey) {
+      showToast('❌ 请输入豆包 API Key');
+      return;
+    }
+  } else {
+    apiKey = document.getElementById('claudeApiKey').value.trim();
+    if (!apiKey) {
+      showToast('❌ 请输入 Claude API Key');
+      return;
+    }
   }
   
   document.getElementById('aiLoading').style.display = 'block';
@@ -534,23 +578,14 @@ async function generateProductInfo() {
   
   // 保存 API Key（如果勾选了）
   if (document.getElementById('saveApiKey').checked) {
-    localStorage.setItem('claudeApiKey', apiKey);
+    if (aiService === 'douban') {
+      localStorage.setItem('doubanApiKey', apiKey);
+    } else {
+      localStorage.setItem('claudeApiKey', apiKey);
+    }
   }
   
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: `你是一个专业的电商商品编辑。请为商品"${productName}"生成以下内容，用JSON格式返回：
+  const prompt = `你是一个专业的电商商品编辑。请为商品"${productName}"生成以下内容，用JSON格式返回：
 {
   "description": "两句简短的商品介绍（突出特点和用途）",
   "specs": ["规格1", "规格2", "规格3"],
@@ -558,18 +593,73 @@ async function generateProductInfo() {
   "searchTips": "用于Google搜索的关键词建议"
 }
 
-请确保返回有效的JSON，价格为数字类型。`
-        }]
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API 错误: ${response.status}`);
+请确保返回有效的JSON，价格为数字类型。`;
+
+  try {
+    if (aiService === 'douban') {
+      // 使用豆包 API（火山引擎）
+      const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'ep-20250227221355-9dn9j',  // 豆包模型 ID
+          messages: [{
+            role: 'user',
+            content: prompt
+          }]
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`豆包 API 错误: ${errorData.error?.message || response.status}`);
+      }
+      
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      parseAndDisplayResults(content);
+      
+    } else {
+      // 使用 Claude API
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 500,
+          messages: [{
+            role: 'user',
+            content: prompt
+          }]
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Claude API 错误: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const content = data.content[0].text;
+      parseAndDisplayResults(content);
     }
     
-    const data = await response.json();
-    const content = data.content[0].text;
-    
+  } catch (error) {
+    console.error('AI 生成错误:', error);
+    showToast('❌ ' + error.message);
+    document.getElementById('aiLoading').style.display = 'none';
+  }
+}
+
+// 解析并显示 AI 结果
+function parseAndDisplayResults(content) {
+  try {
     // 尝试解析 JSON
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -583,7 +673,7 @@ async function generateProductInfo() {
       description: result.description || '',
       specs: result.specs || [],
       prices: result.prices || [],
-      searchTips: result.searchTips || productName
+      searchTips: result.searchTips || ''
     };
     
     // 显示结果
@@ -599,8 +689,8 @@ async function generateProductInfo() {
     document.getElementById('aiResults').style.display = 'block';
     
   } catch (error) {
-    console.error('AI 生成错误:', error);
-    showToast('❌ ' + error.message);
+    console.error('解析结果错误:', error);
+    showToast('❌ 结果解析失败: ' + error.message);
     document.getElementById('aiLoading').style.display = 'none';
   }
 }

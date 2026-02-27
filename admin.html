@@ -634,9 +634,30 @@
         <button onclick="closeAIAssistant()" style="background: none; border: none; font-size: 24px; cursor: pointer;">✕</button>
       </div>
 
-      <!-- API Key 配置 -->
-      <div style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #333;">
-        <strong>📌 需要 Claude API 密钥：</strong><br>
+      <!-- AI 服务选择 -->
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 13px; color: #666; margin-bottom: 8px; font-weight: bold;">选择 AI 服务</label>
+        <div style="display: flex; gap: 8px;">
+          <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 10px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;">
+            <input type="radio" name="aiService" value="douban" checked> 🤖 豆包
+          </label>
+          <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 10px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;">
+            <input type="radio" name="aiService" value="claude"> 🧠 Claude
+          </label>
+        </div>
+      </div>
+
+      <!-- 豆包 API 配置 -->
+      <div id="doubanConfig" style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #333;">
+        <strong>📌 豆包 API 密钥获取：</strong><br>
+        1. 访问 <a href="https://console.volcengine.com" target="_blank" style="color: #0066cc;">火山引擎控制台</a><br>
+        2. 创建 API Key（免费额度充足）<br>
+        3. 粘贴在下方框中
+      </div>
+
+      <!-- Claude API 配置 -->
+      <div id="claudeConfig" style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #333; display: none;">
+        <strong>📌 Claude API 密钥获取：</strong><br>
         1. 访问 <a href="https://console.anthropic.com" target="_blank" style="color: #0066cc;">Anthropic 控制台</a><br>
         2. 创建 API Key（免费账户可用）<br>
         3. 粘贴在下方框中
@@ -644,7 +665,8 @@
 
       <!-- API Key 输入 -->
       <div style="margin-bottom: 16px;">
-        <input type="password" id="claudeApiKey" placeholder="粘贴 Claude API Key（sk-...）" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; margin-bottom: 8px;">
+        <input type="password" id="doubanApiKey" placeholder="粘贴豆包 API Key" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; margin-bottom: 8px;">
+        <input type="password" id="claudeApiKey" placeholder="粘贴 Claude API Key（sk-...）" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box; margin-bottom: 8px; display: none;">
         <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666;">
           <input type="checkbox" id="saveApiKey"> 保存 API Key 到本地（下次无需重新输入）
         </label>
