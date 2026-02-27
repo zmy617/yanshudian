@@ -481,7 +481,7 @@
           <input type="text" class="form-input" id="productImage" placeholder="粘贴图片链接，或留空使用默认图" style="margin-bottom:8px;">
           <div style="display: flex; gap: 8px;">
             <button type="button" class="add-spec-btn" onclick="useDefaultImage()" style="margin-bottom: 0; flex: 1;">使用默认占位图</button>
-            <button type="button" class="add-spec-btn" onclick="generateProductImage()" style="margin-bottom: 0; flex: 1;">生成白底图</button>
+            <button type="button" class="add-spec-btn" onclick="openSearchModal()" style="margin-bottom: 0; flex: 1;">🔍 搜索商品图片</button>
           </div>
         </div>
 
@@ -569,6 +569,48 @@
 
   <!-- Toast -->
   <div class="admin-toast" id="adminToast"></div>
+
+  <!-- 搜索商品图片模态框 -->
+  <div id="searchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto;">
+    <div style="background: white; margin: 20px auto; border-radius: 8px; max-width: 600px; padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">🔍 搜索商品图片</h2>
+        <button onclick="closeSearchModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">✕</button>
+      </div>
+
+      <!-- API Key 设置 -->
+      <div style="background: #f0f0f0; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #666;">
+        <strong>⚙️ API 配置：</strong><br>
+        <input type="password" id="removeBgApiKey" placeholder="输入 remove.bg API Key（免费注册获取）" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        <div style="margin-top: 8px; color: #999;">
+          📌 还没有 API Key？<a href="https://remove.bg/api" target="_blank" style="color: #0066cc;">点此免费注册</a>（每月 50 张免费）
+        </div>
+      </div>
+
+      <!-- 搜索框 -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <input type="text" id="searchProductName" placeholder="输入商品名称搜索..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        <button onclick="searchProductImages()" style="background: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">搜索</button>
+      </div>
+
+      <!-- 搜索结果 -->
+      <div id="searchResults" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <!-- 搜索结果将显示在这里 -->
+        </div>
+      </div>
+
+      <!-- 加载中 -->
+      <div id="searchLoading" style="display: none; text-align: center; padding: 40px; color: #999;">
+        <div style="font-size: 14px;">搜索中，请稍候...</div>
+      </div>
+
+      <!-- 提示 -->
+      <div id="searchTip" style="text-align: center; padding: 40px; color: #999; font-size: 14px;">
+        输入商品名称搜索真实商品图片，支持自动背景移除
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="products.js"></script>

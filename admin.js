@@ -157,63 +157,149 @@ function useDefaultImage() {
   document.getElementById('imagePreview').innerHTML = `<img src="${url}" alt="预览">`;
 }
 
-// 生成白底图片
-function generateProductImage() {
+// 打开搜索商品图片模态框
+function openSearchModal() {
   const productName = document.getElementById('productName').value.trim();
+  if (productName) {
+    document.getElementById('searchProductName').value = productName;
+  }
+  document.getElementById('searchModal').style.display = 'block';
+}
+
+// 关闭模态框
+function closeSearchModal() {
+  document.getElementById('searchModal').style.display = 'none';
+  document.getElementById('searchResults').style.display = 'none';
+  document.getElementById('searchTip').style.display = 'block';
+}
+
+// 搜索商品图片
+async function searchProductImages() {
+  const productName = document.getElementById('searchProductName').value.trim();
   
   if (!productName) {
-    showToast('请先输入商品名称');
+    showToast('请输入商品名称');
     return;
   }
 
-  // 创建 Canvas
-  const canvas = document.createElement('canvas');
-  canvas.width = 400;
-  canvas.height = 400;
-  const ctx = canvas.getContext('2d');
+  document.getElementById('searchLoading').style.display = 'block';
+  document.getElementById('searchTip').style.display = 'none';
+  document.getElementById('searchResults').style.display = 'none';
 
-  // 绘制白色背景
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  try {
+    // 使用 Unsplash API 搜索图片（无需 API Key）
+    const response = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(productName)}&per_page=12&client_id=rJ_d-nKqYoXgkFr2Zs2KLSAHSGDiLK4PXOTh2MLgVc4`
+    );
+    
+    if (!response.ok) {
+      throw new Error('搜索失败，请稍后重试');
+    }
 
-  // 绘制边框
-  ctx.strokeStyle = '#E0E0E0';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    const data = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+      showToast('未找到相关图片，请尝试其他名称');
+      document.getElementById('searchLoading').style.display = 'none';
+      return;
+    }
 
-  // 绘制文字
-  ctx.fillStyle = '#333333';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+    // 显示搜索结果
+    const resultsContainer = document.querySelector('#searchResults > div');
+    resultsContainer.innerHTML = data.results.map((photo, index) => `
+      <div style="cursor: pointer; border: 2px solid #ddd; border-radius: 6px; overflow: hidden; transition: transform 0.2s;" 
+           onclick="selectImageForRemoveBg('${photo.urls.regular}', ${index})">
+        <img src="${photo.urls.thumb}" style="width: 100%; height: 150px; object-fit: cover;">
+        <div style="padding: 8px; text-align: center; font-size: 12px; color: #666;">点击使用</div>
+      </div>
+    `).join('');
 
-  // 自动调整字体大小
-  let fontSize = 60;
-  ctx.font = `bold ${fontSize}px "Microsoft YaHei", "SimHei", Arial, sans-serif`;
+    document.getElementById('searchLoading').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'block';
+
+  } catch (error) {
+    console.error('搜索错误:', error);
+    showToast('搜索出错: ' + error.message);
+    document.getElementById('searchLoading').style.display = 'none';
+  }
+}
+
+// 选择图片并移除背景
+async function selectImageForRemoveBg(imageUrl, index) {
+  const apiKey = document.getElementById('removeBgApiKey').value.trim();
   
-  // 测量文字宽度，如果太宽则缩小字体
-  let textMetrics = ctx.measureText(productName);
-  while (textMetrics.width > canvas.width - 40 && fontSize > 20) {
-    fontSize -= 5;
-    ctx.font = `bold ${fontSize}px "Microsoft YaHei", "SimHei", Arial, sans-serif`;
-    textMetrics = ctx.measureText(productName);
+  if (!apiKey) {
+    showToast('⚠️ 需要 remove.bg API Key，请先设置');
+    return;
   }
 
-  // 绘制主文字
-  ctx.fillText(productName, canvas.width / 2, canvas.height / 2 - 20);
+  document.getElementById('searchLoading').style.display = 'block';
+  document.getElementById('searchResults').style.display = 'none';
 
-  // 绘制副文本（商场名）
-  ctx.fillStyle = '#999999';
-  ctx.font = `14px "Microsoft YaHei", "SimHei", Arial, sans-serif`;
-  ctx.fillText('花冠专卖店永盛烟酒', canvas.width / 2, canvas.height / 2 + 60);
+  try {
+    // 调用 remove.bg API 移除背景
+    const form = new FormData();
+    form.append('image_url', imageUrl);
+    form.append('type', 'auto');
+    form.append('format', 'autodetect');
 
-  // 转换为 data URL
-  const imageData = canvas.toDataURL('image/jpeg', 0.95);
-  
-  // 设置图片
-  document.getElementById('productImage').value = imageData;
-  document.getElementById('imagePreview').innerHTML = `<img src="${imageData}" alt="预览" style="width:100%; height:100%; object-fit:contain;">`;
-  
-  showToast('白底图已生成 ✓');
+    const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+      method: 'POST',
+      headers: {
+        'X-Api-Key': apiKey
+      },
+      body: form
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('API Key 无效或已过期');
+      } else if (response.status === 402) {
+        throw new Error('API 配额已用尽，请升级账户');
+      }
+      throw new Error('背景移除失败');
+    }
+
+    const blob = await response.blob();
+    
+    // 创建 Canvas 添加白色背景
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(img.width, 400);
+      canvas.height = Math.max(img.height, 400);
+      
+      const ctx = canvas.getContext('2d');
+      
+      // 绘制白色背景
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 居中绘制图片
+      const x = (canvas.width - img.width) / 2;
+      const y = (canvas.height - img.height) / 2;
+      ctx.drawImage(img, x, y);
+      
+      // 转换为 data URL
+      const resultImage = canvas.toDataURL('image/png');
+      
+      // 设置图片
+      document.getElementById('productImage').value = resultImage;
+      document.getElementById('imagePreview').innerHTML = `<img src="${resultImage}" alt="预览" style="width:100%; height:100%; object-fit:contain;">`;
+      
+      closeSearchModal();
+      showToast('✅ 图片处理完成');
+      document.getElementById('searchLoading').style.display = 'none';
+    };
+    
+    img.src = URL.createObjectURL(blob);
+
+  } catch (error) {
+    console.error('背景移除错误:', error);
+    showToast('❌ ' + error.message);
+    document.getElementById('searchLoading').style.display = 'none';
+    document.getElementById('searchResults').style.display = 'block';
+  }
 }
 
 // 处理表单提交
